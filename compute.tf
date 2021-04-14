@@ -1,30 +1,30 @@
 
-# resource oci_core_instance app_instance {
-#   metadata = {
-#     ssh_authorized_keys = file(var.compute_ssh_pub_key)
-#   }
-#   availability_config {
-#     recovery_action = "RESTORE_INSTANCE"
-#   }
-#   availability_domain = data.oci_identity_availability_domain.AD-1.name
-#   compartment_id      = var.compartment_ocid
-#   create_vnic_details {
-#     assign_public_ip = "true"
-#     display_name = var.compute_vnic_display_name
-#     hostname_label = var.compute_hostname
-#     subnet_id  = oci_core_subnet.standbySubnet1.id 
-#   }
-#   display_name = var.compute_display_name
-#   shape = var.compute_shape
-#   source_details {
-#     source_id = oci_core_boot_volume.restored_boot_volume.id
-#     source_type = "bootVolume"
-#   }
-#   # source_details {
-#   #   source_id = var.compute_image_id
-#   #   source_type = "image"
-#   # }
-# }
+resource oci_core_instance app_instance {
+  metadata = {
+    ssh_authorized_keys = file(var.compute_ssh_pub_key)
+  }
+  availability_config {
+    recovery_action = "RESTORE_INSTANCE"
+  }
+  availability_domain = data.oci_identity_availability_domain.AD-1.name
+  compartment_id      = var.compartment_ocid
+  create_vnic_details {
+    assign_public_ip = "true"
+    display_name = var.compute_vnic_display_name
+    hostname_label = var.compute_hostname
+    subnet_id  = oci_core_subnet.standbySubnet1.id 
+  }
+  display_name = var.compute_display_name
+  shape = var.compute_shape
+  source_details {
+    source_id = oci_core_boot_volume.restored_boot_volume.id
+    source_type = "bootVolume"
+  }
+  # source_details {
+  #   source_id = var.compute_image_id
+  #   source_type = "image"
+  # }
+}
 
 resource "oci_core_boot_volume_backup" "initial_boot_volume_backup" {
     provider = oci.primary_region
@@ -59,37 +59,37 @@ resource "oci_core_boot_volume" "restored_boot_volume" {
 
 # Set-Up Application
 
-# resource "null_resource" SETUP_COMPUTE_BY_SSH {
-#     depends_on = [oci_core_instance.app_instance]
-#     connection {
-#     type     = "ssh"
-#     user     = "opc"
-#     private_key = file(var.compute_ssh_private_key)
-#     host     = oci_core_instance.app_instance.public_ip
-#   }
-#     provisioner "remote-exec" {
-#       inline = [
-#         "sudo systemctl start docker",
-#         "sudo usermod -aG docker opc"
-#       ]
-#     }
-# }
-# resource "null_resource" SETUP_APP_BY_SSH {
-#     depends_on = [oci_core_instance.app_instance, null_resource.SETUP_COMPUTE_BY_SSH]
-#     connection {
-#     type     = "ssh"
-#     user     = "opc"
-#     private_key = file(var.compute_ssh_private_key)
-#     host     = oci_core_instance.app_instance.public_ip
-#   }
-#     provisioner "remote-exec" {
-#       inline = [
-#         "cd oracle.r2r.simple-app",
-#         "docker build -t simpleapp:latest .",
-#         "docker run -d -p 80:3000 simpleapp"
-#       ]
-#     }
-# }
+resource "null_resource" SETUP_COMPUTE_BY_SSH {
+    depends_on = [oci_core_instance.app_instance]
+    connection {
+    type     = "ssh"
+    user     = "opc"
+    private_key = file(var.compute_ssh_private_key)
+    host     = oci_core_instance.app_instance.public_ip
+  }
+    provisioner "remote-exec" {
+      inline = [
+        "sudo systemctl start docker",
+        "sudo usermod -aG docker opc"
+      ]
+    }
+}
+resource "null_resource" SETUP_APP_BY_SSH {
+    depends_on = [oci_core_instance.app_instance, null_resource.SETUP_COMPUTE_BY_SSH]
+    connection {
+    type     = "ssh"
+    user     = "opc"
+    private_key = file(var.compute_ssh_private_key)
+    host     = oci_core_instance.app_instance.public_ip
+  }
+    provisioner "remote-exec" {
+      inline = [
+        "cd oracle.r2r.simple-app",
+        "docker build -t simpleapp:latest .",
+        "docker run -d -p 80:3000 simpleapp"
+      ]
+    }
+}
 
 
 /*
